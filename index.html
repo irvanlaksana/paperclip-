@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Paperclip — Mesin Konten Marketplace</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="logo">📎 Paperclip</div>
+    <h1>Dari Bahan Mentah → Konten Siap Jual</h1>
+    <p>Masukkan bahan dari kamu (nama produk, keunggulan, harga), Paperclip yang meracik
+       judul, deskripsi, dan hashtag yang siap dipajang di Shopee, Tokopedia, TikTok Shop, dan Lazada.</p>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- FORM BAHAN -->
+  <section class="card">
+    <h2>1. Bahan dari Kamu</h2>
+    <label>Nama Produk
+      <input id="nama" type="text" placeholder="cth: Tas Selempang Kulit Sapi Asli" />
+    </label>
+    <label>Kategori
+      <select id="kategori">
+        <option>Fashion</option>
+        <option>Kecantikan</option>
+        <option>Elektronik</option>
+        <option>Rumah Tangga</option>
+        <option>Makanan & Minuman</option>
+        <option>Kesehatan</option>
+        <option>Olahraga</option>
+        <option>Ibu & Bayi</option>
+        <option>Lainnya</option>
+      </select>
+    </label>
+    <label>Bahan / Material
+      <input id="bahan" type="text" placeholder="cth: Kulit sapi asli, jahitan tangan" />
+    </label>
+    <label>Keunggulan (satu per baris)
+      <textarea id="fitur" rows="4" placeholder="cth:&#10;Tahan air&#10;Jahitan rapi premium&#10;Gratis custom nama"></textarea>
+    </label>
+    <div class="row">
+      <label>Harga (Rp)
+        <input id="harga" type="number" placeholder="cth: 149000" />
+      </label>
+      <label>Tone Bahasa
+        <select id="tone">
+          <option value="santai">Santai & akrab</option>
+          <option value="premium">Premium & elegan</option>
+          <option value="promo">Heboh promo / flash sale</option>
+        </select>
+      </label>
+    </div>
+    <label>Target Pembeli (opsional)
+      <input id="target" type="text" placeholder="cth: pekerja muda, ibu rumah tangga" />
+    </label>
+    <button id="generate" class="btn-primary">📎 Produksi Konten</button>
+  </section>
+
+  <!-- HASIL -->
+  <section class="card">
+    <h2>2. Hasil Produksi Paperclip</h2>
+    <div class="tabs">
+      <button class="tab active" data-tab="shopee">Shopee</button>
+      <button class="tab" data-tab="tokopedia">Tokopedia</button>
+      <button class="tab" data-tab="tiktok">TikTok Shop</button>
+      <button class="tab" data-tab="lazada">Lazada</button>
+      <button class="tab" data-tab="sosmed">Sosmed</button>
+    </div>
+    <div id="output" class="output">
+      <p class="placeholder">Isi bahan di sebelah kiri, lalu klik <b>“Produksi Konten”</b>.<br/>Hasil judul, deskripsi & hashtag akan muncul di sini.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>📎 Paperclip — tugasnya satu: bikin bahan mentahmu jadi konten yang laku di semua marketplace.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
