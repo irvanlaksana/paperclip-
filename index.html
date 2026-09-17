@@ -3,81 +3,186 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Paperclip — Mesin Konten Marketplace</title>
+<title>Paperclip AI — Content Creator Edition (Distribusi Alat Listrik)</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <header class="hero">
   <div class="hero-inner">
-    <div class="logo">📎 Paperclip</div>
-    <h1>Dari Bahan Mentah → Konten Siap Jual</h1>
-    <p>Masukkan bahan dari kamu (nama produk, keunggulan, harga), Paperclip yang meracik
-       judul, deskripsi, dan hashtag yang siap dipajang di Shopee, Tokopedia, TikTok Shop, dan Lazada.</p>
+    <div class="logo">📎 Paperclip AI <span class="edition">Content Creator Edition</span></div>
+    <h1>Content Engine untuk Distribusi Alat Listrik ⚡</h1>
+    <p>Satu tim AI — dipimpin <b>Content Director</b> dan 4 agen spesialis — memproduksi listing marketplace,
+       caption sosmed, dan skrip video pendek yang konsisten, SEO-friendly, dan akurat secara teknis
+       untuk Shopee, Tokopedia, Instagram, TikTok Shop &amp; WhatsApp.</p>
   </div>
 </header>
 
-<main class="layout">
-  <!-- FORM BAHAN -->
-  <section class="card">
-    <h2>1. Bahan dari Kamu</h2>
-    <label>Nama Produk
-      <input id="nama" type="text" placeholder="cth: Tas Selempang Kulit Sapi Asli" />
-    </label>
-    <label>Kategori
-      <select id="kategori">
-        <option>Fashion</option>
-        <option>Kecantikan</option>
-        <option>Elektronik</option>
-        <option>Rumah Tangga</option>
-        <option>Makanan & Minuman</option>
-        <option>Kesehatan</option>
-        <option>Olahraga</option>
-        <option>Ibu & Bayi</option>
-        <option>Lainnya</option>
-      </select>
-    </label>
-    <label>Bahan / Material
-      <input id="bahan" type="text" placeholder="cth: Kulit sapi asli, jahitan tangan" />
-    </label>
-    <label>Keunggulan (satu per baris)
-      <textarea id="fitur" rows="4" placeholder="cth:&#10;Tahan air&#10;Jahitan rapi premium&#10;Gratis custom nama"></textarea>
-    </label>
-    <div class="row">
-      <label>Harga (Rp)
-        <input id="harga" type="number" placeholder="cth: 149000" />
+<main class="wrap">
+
+  <!-- 1. ONBOARDING COMPANY -->
+  <section class="card" id="onboarding">
+    <h2>1️⃣ Onboarding Company — Mission Setup</h2>
+    <p class="hint">Data ini dipakai semua agen: setiap task bisa ditelusuri kembali ke misi company.</p>
+    <div class="grid2">
+      <label>Nama Toko
+        <input id="toko" type="text" value="Sumber Listrik Jaya" placeholder="cth: Sumber Listrik Jaya" />
       </label>
-      <label>Tone Bahasa
-        <select id="tone">
-          <option value="santai">Santai & akrab</option>
-          <option value="premium">Premium & elegan</option>
-          <option value="promo">Heboh promo / flash sale</option>
-        </select>
+      <label>Budget (token/biaya per agent per bulan)
+        <input id="budget" type="text" value="Rp 100.000" placeholder="cth: Rp 100.000" />
       </label>
     </div>
-    <label>Target Pembeli (opsional)
-      <input id="target" type="text" placeholder="cth: pekerja muda, ibu rumah tangga" />
+    <label>Industry
+      <input type="text" value="Distribusi alat & komponen listrik (kabel, saklar, lampu, MCB, stop kontak, dll)" disabled />
     </label>
-    <button id="generate" class="btn-primary">📎 Produksi Konten</button>
+    <label>Sales Channels
+      <span class="checks">
+        <label class="check"><input type="checkbox" name="channel" value="Shopee" checked /> Shopee</label>
+        <label class="check"><input type="checkbox" name="channel" value="Tokopedia" checked /> Tokopedia</label>
+        <label class="check"><input type="checkbox" name="channel" value="Instagram" checked /> Instagram</label>
+        <label class="check"><input type="checkbox" name="channel" value="TikTok Shop" checked /> TikTok Shop</label>
+        <label class="check"><input type="checkbox" name="channel" value="WhatsApp Business" checked /> WhatsApp Business</label>
+      </span>
+    </label>
+    <label>Mission
+      <textarea id="misi" rows="4">Menghasilkan konten penjualan (deskripsi produk, SEO marketplace, caption sosial media, dan skrip video pendek) yang konsisten, akurat secara teknis, dan dioptimalkan untuk konversi — tanpa klaim berlebihan dan tetap mematuhi istilah kelistrikan yang benar.</textarea>
+    </label>
+    <div class="grid2">
+      <label>Heartbeat (cek antrian produk baru)
+        <input id="jam" type="time" value="08:00" />
+      </label>
+      <div class="align-end">
+        <button class="btn-ghost" data-copy-src="mission">📋 Salin Prompt Company Mission</button>
+      </div>
+    </div>
   </section>
 
-  <!-- HASIL -->
-  <section class="card">
-    <h2>2. Hasil Produksi Paperclip</h2>
-    <div class="tabs">
-      <button class="tab active" data-tab="shopee">Shopee</button>
-      <button class="tab" data-tab="tokopedia">Tokopedia</button>
-      <button class="tab" data-tab="tiktok">TikTok Shop</button>
-      <button class="tab" data-tab="lazada">Lazada</button>
-      <button class="tab" data-tab="sosmed">Sosmed</button>
-    </div>
-    <div id="output" class="output">
-      <p class="placeholder">Isi bahan di sebelah kiri, lalu klik <b>“Produksi Konten”</b>.<br/>Hasil judul, deskripsi & hashtag akan muncul di sini.</p>
+  <!-- 2. ORG CHART -->
+  <section class="card" id="org">
+    <h2>2️⃣ Struktur Tim — Org Chart</h2>
+    <p class="hint">Setiap task yang dibuat agen di bawah ditelusuri ke misi company.
+      Contoh: saat Social Media Copywriter membuat caption, ia “tahu” itu untuk mendukung goal penjualan marketplace — bukan sekadar posting acak.</p>
+
+    <div class="org">
+      <div class="director-card">
+        <div class="d-icon">🎬</div>
+        <div>
+          <div class="d-role">Content Director <span class="badge badge-manager">Manager Agent</span></div>
+          <div class="d-goal">Menerima misi company, membagi task ke agen, dan memastikan semua output mendukung goal penjualan.</div>
+        </div>
+      </div>
+      <div class="org-branch"></div>
+      <div class="org-children" id="orgChildren"><!-- agen dirender oleh app.js --></div>
     </div>
   </section>
+
+  <!-- 3. PIPELINE -->
+  <div class="layout">
+    <section class="card">
+      <h2>3️⃣ Bahan Produk (Antrian Heartbeat)</h2>
+      <div class="row sample-row">
+        <select id="contoh">
+          <option value="saklar">Contoh: Saklar Listrik</option>
+          <option value="kabel">Contoh: Kabel NYM</option>
+          <option value="lampu">Contoh: Lampu LED</option>
+        </select>
+        <button id="isiContoh" class="btn-ghost" type="button">⚡ Isi Contoh</button>
+      </div>
+
+      <label>Nama Produk
+        <input id="nama" type="text" placeholder="cth: Saklar Tunggal Anti-Korslet" />
+      </label>
+      <div class="row">
+        <label>Merek
+          <input id="merek" type="text" placeholder="cth: Broco" />
+        </label>
+        <label>Kategori
+          <select id="kategori">
+            <option>Saklar</option>
+            <option>Kabel</option>
+            <option>Stop Kontak</option>
+            <option>Lampu</option>
+            <option>MCB</option>
+            <option>Fitting & Aksesori</option>
+            <option>Steker & Kabel Roll</option>
+            <option>Lainnya</option>
+          </select>
+        </label>
+      </div>
+      <label>Ukuran / Spesifikasi Utama
+        <input id="spek" type="text" placeholder="cth: 10A 250V / 2x1.5mm 50m / 12W E27" />
+      </label>
+      <div class="row">
+        <label>Tegangan (volt, opsional)
+          <input id="tegangan" type="text" placeholder="cth: 250" />
+        </label>
+        <label>Arus (ampere, opsional)
+          <input id="arus" type="text" placeholder="cth: 10" />
+        </label>
+      </div>
+      <label>Keunggulan (satu per baris)
+        <textarea id="fitur" rows="4" placeholder="cth:&#10;Bahan tahan panas & anti-korslet&#10;Plat tembaga tebal, klik mantap&#10;Pemasangan mudah (inbow)"></textarea>
+      </label>
+      <div class="row">
+        <label>Harga (Rp)
+          <input id="harga" type="number" placeholder="cth: 18500" />
+        </label>
+        <label>Durasi Video (detik)
+          <select id="durasi">
+            <option value="15">15 detik</option>
+            <option value="25" selected>25 detik</option>
+            <option value="30">30 detik</option>
+            <option value="45">45 detik</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label>Isi Paket
+          <input id="paket" type="text" placeholder="cth: 1x saklar + sekrup pemasangan" />
+        </label>
+        <label>Garansi
+          <input id="garansi" type="text" placeholder="cth: Garansi toko 7 hari" />
+        </label>
+      </div>
+      <div class="row">
+        <label>Kota (untuk hashtag lokal, opsional)
+          <input id="kota" type="text" placeholder="cth: Surabaya" />
+        </label>
+        <label>Target Pembeli (opsional)
+          <input id="target" type="text" placeholder="cth: pemilik rumah, tukang listrik" />
+        </label>
+      </div>
+      <label class="check big"><input id="sni" type="checkbox" /> Produk bersertifikat SNI <span class="muted">(klaim SNI hanya dipakai jika dicentang — aturan QA)</span></label>
+
+      <button id="generate" class="btn-primary">🎬 Jalankan Pipeline Content Director</button>
+    </section>
+
+    <!-- HASIL -->
+    <section class="card">
+      <h2>4️⃣ Hasil Produksi Tim</h2>
+      <div class="stepper" id="stepper">
+        <div class="step" data-step="director">🎬 Direktur</div>
+        <div class="step" data-step="seo">🛒 SEO Writer</div>
+        <div class="step" data-step="sosmed">📱 Copywriter</div>
+        <div class="step" data-step="video">🎥 Script Writer</div>
+        <div class="step" data-step="qa">🔍 QA Reviewer</div>
+      </div>
+      <div id="misiBanner" class="misi-banner hidden"></div>
+      <div class="tabs">
+        <button class="tab active" data-tab="seo">🛒 Marketplace SEO</button>
+        <button class="tab" data-tab="sosmed">📱 Sosmed & WA</button>
+        <button class="tab" data-tab="video">🎥 Video Script</button>
+        <button class="tab" data-tab="qa">🔍 QA Review</button>
+      </div>
+      <div id="output" class="output">
+        <p class="placeholder">Isi bahan produk (atau klik <b>“⚡ Isi Contoh”</b>), lalu jalankan pipeline.<br/>
+        Hasil dari keempat agen akan muncul di sini, lengkap dengan laporan QA.</p>
+      </div>
+    </section>
+  </div>
 </main>
 
 <footer>
-  <p>📎 Paperclip — tugasnya satu: bikin bahan mentahmu jadi konten yang laku di semua marketplace.</p>
+  <p>📎 Paperclip AI — Content Creator Edition · Misi: menaikkan penjualan alat listrik lewat konten yang konsisten, SEO-friendly, dan akurat secara teknis.</p>
 </footer>
 
 <script src="app.js"></script>
