@@ -1,0 +1,26 @@
+{
+  "name": "paperclip-content-creator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "📎 Paperclip AI — Content Creator Edition untuk distribusi alat listrik. Marketplace + Social Media content engine (100% client-side).",
+  "keywords": [
+    "paperclip",
+    "content-creator",
+    "marketplace",
+    "seo",
+    "vercel",
+    "static-site"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes serve@latest . -l 3000 -s",
+    "start": "npx --yes serve@latest . -l 3000 -s",
+    "preview": "npx --yes serve@latest . -l 3000 -s",
+    "serve": "python3 -m http.server 3000"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "",
+  "license": "MIT"
+}

@@ -1,5 +1,9 @@
 # 📎 Paperclip AI — Content Creator Edition
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/irvanlaksana/paperclip-&project-name=paperclip-content-creator&repository-name=paperclip-content-creator)
+
+**Otomatis deploy di Vercel — zero config, 100% static.**
+
 **Content engine untuk bisnis distribusi alat listrik** — Marketplace + Social Media.
 Memproduksi listing marketplace, caption sosmed, dan skrip video pendek yang konsisten,
 SEO-friendly, dan akurat secara teknis untuk Shopee, Tokopedia, Instagram, TikTok Shop & WhatsApp.
@@ -44,7 +48,43 @@ bukan sekadar posting acak.
 - Klaim **SNI** hanya boleh jika produk memang dicentang bersertifikat
 - Tegangan (volt) & arus (ampere) dari input harus tercantum di listing
 
-## Cara menjalankan
+## 🚀 Deploy ke Vercel (Otomatis)
+
+Proyek ini sudah dikonfigurasi **zero-config** untuk Vercel:
+
+- `vercel.json` — set `framework: null` (static), `cleanUrls`, rewrite SPA-safe, dan security headers
+- `package.json` — ada script `dev`/`start` pakai `serve` + engine Node >=18
+- 100% client-side, tanpa build step, tanpa env variable
+
+### 3 Cara Deploy Otomatis:
+
+**1. One-Click Deploy (paling cepat):**
+Klik tombol di atas: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/irvanlaksana/paperclip-&project-name=paperclip-content-creator&repository-name=paperclip-content-creator)
+
+**2. Import dari GitHub Dashboard:**
+- Buka https://vercel.com/new
+- Import repo `irvanlaksana/paperclip-`
+- Framework Preset akan terdeteksi `Other` (static) otomatis karena `vercel.json`
+- Klik **Deploy** — selesai, langsung live!
+
+**3. Via CLI:**
+```bash
+npm i -g vercel
+vercel --prod
+# atau
+npx vercel --prod
+```
+
+Setelah deploy, setiap `git push` ke branch `main` akan otomatis trigger deploy baru (Vercel Git Integration).
+
+### Cek Deployment Lokal (mirip Vercel):
+```bash
+npx serve . -l 3000 -s
+# atau
+npm run dev
+```
+
+## Cara menjalankan (lokal tanpa Vercel)
 Tanpa install apa pun — cukup buka file `index.html` di browser,
 atau jalankan server lokal:
 
@@ -57,3 +97,6 @@ python3 -m http.server 8000
 - `index.html` — onboarding company, org chart, form bahan, hasil 4 agen
 - `styles.css` — tampilan
 - `app.js` — mesin pipeline konten (100% client-side, tanpa backend)
+- `vercel.json` — konfigurasi deploy Vercel (static, cleanUrls, headers, rewrites)
+- `package.json` — metadata + script dev/start untuk Vercel
+- `.vercelignore` — file yang diabaikan saat deploy
