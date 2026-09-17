@@ -1,0 +1,37 @@
+{
+  "name": "paperclip",
+  "private": true,
+  "type": "module",
+  "description": "📎 Paperclip — The open-source app everyone uses to manage agents at work. Content Creator Edition for electrical distribution.",
+  "version": "1.0.0-content-creator",
+  "keywords": ["paperclip", "agents", "orchestration", "content-creator", "marketplace", "seo"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "postinstall": "node scripts/link-workspace.mjs || true",
+    "dev": "pnpm --filter @paperclipai/ui dev",
+    "dev:server": "pnpm --filter @paperclipai/server dev",
+    "dev:ui": "pnpm --filter @paperclipai/ui dev",
+    "dev:both": "node scripts/dev-both.mjs",
+    "dev:cli": "pnpm --filter @paperclipai/cli dev",
+    "build": "pnpm -r build",
+    "build:ui": "pnpm --filter @paperclipai/ui build",
+    "build:server": "pnpm --filter @paperclipai/server build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "paperclip": "node cli/src/index.ts",
+    "vercel-build": "pnpm --filter @paperclipai/ui build",
+    "start": "pnpm --filter @paperclipai/server start"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+node_modules
+.vercel
+.env
+.env.local
+*.log
+.DS_Store
+dist
+ui/dist
+server/dist
+packages/*/dist
+cli/dist
+.pnpm-store
+.turbo

@@ -1,0 +1,9 @@
+packages:
+  - ui
+  - server
+  - cli
+  - packages/*
+  - packages/adapters/*
+  - packages/plugins/*
+
+# Keep in sync with root package.json if needed
