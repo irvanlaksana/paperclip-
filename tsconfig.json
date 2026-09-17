@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "references": [
+    { "path": "./server" },
+    { "path": "./ui" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/db" },
+    { "path": "./cli" }
+  ]
+}

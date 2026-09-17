@@ -1,0 +1,15 @@
+{
+  "name": "@paperclipai/db",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "generate": "echo 'db generate — mock for content creator edition'",
+    "migrate": "echo 'db migrate — mock'"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
