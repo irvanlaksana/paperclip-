@@ -1,5 +1,5 @@
-// 📎 Paperclip AI — Content Creator Edition
-// Mesin konten untuk distribusi alat listrik: Marketplace + Social Media (100% client-side)
+// 📎 Paperclip AI — Content Creator Edition + Multi AI Provider
+// Mesin konten untuk distribusi alat listrik: Marketplace + Social Media (100% client-side + optional AI API)
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -7,6 +7,76 @@ const rupiah = (n) => (n && !isNaN(n) ? "Rp" + Number(n).toLocaleString("id-ID")
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 18);
 const countWords = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 const countHashtags = (s) => (s.match(/#[A-Za-z0-9_]+/g) || []).length;
+
+// ---------------------------------------------------------------------------
+// AI PROVIDER DEFINITIONS
+// ---------------------------------------------------------------------------
+const AI_PROVIDERS = {
+  openai: {
+    label: "OpenAI",
+    baseUrl: "https://api.openai.com/v1",
+    models: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo", "o1-mini"],
+    defaultModel: "gpt-4o-mini",
+    keyPlaceholder: "sk-...",
+    keyPrefix: "sk-"
+  },
+  anthropic: {
+    label: "Anthropic Claude",
+    baseUrl: "https://api.anthropic.com",
+    models: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229"],
+    defaultModel: "claude-3-5-sonnet-20241022",
+    keyPlaceholder: "sk-ant-...",
+    keyPrefix: "sk-ant-"
+  },
+  gemini: {
+    label: "Google Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    models: ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-8b", "gemini-2.0-flash-exp"],
+    defaultModel: "gemini-1.5-flash",
+    keyPlaceholder: "AIza...",
+    keyPrefix: "AIza"
+  },
+  groq: {
+    label: "Groq (cepat & murah)",
+    baseUrl: "https://api.groq.com/openai/v1",
+    models: ["llama-3.1-8b-instant", "llama-3.1-70b-versatile", "llama-3.3-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"],
+    defaultModel: "llama-3.1-8b-instant",
+    keyPlaceholder: "gsk_...",
+    keyPrefix: "gsk_"
+  },
+  openrouter: {
+    label: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    models: ["openai/gpt-4o-mini", "anthropic/claude-3.5-sonnet", "google/gemini-flash-1.5", "meta-llama/llama-3.1-8b-instruct:free", "deepseek/deepseek-chat:free"],
+    defaultModel: "openai/gpt-4o-mini",
+    keyPlaceholder: "sk-or-...",
+    keyPrefix: "sk-or-"
+  },
+  deepseek: {
+    label: "DeepSeek",
+    baseUrl: "https://api.deepseek.com/v1",
+    models: ["deepseek-chat", "deepseek-reasoner"],
+    defaultModel: "deepseek-chat",
+    keyPlaceholder: "sk-...",
+    keyPrefix: "sk-"
+  },
+  mistral: {
+    label: "Mistral AI",
+    baseUrl: "https://api.mistral.ai/v1",
+    models: ["mistral-small-latest", "mistral-large-latest", "open-mistral-nemo", "codestral-latest"],
+    defaultModel: "mistral-small-latest",
+    keyPlaceholder: "API Key Mistral",
+    keyPrefix: ""
+  },
+  custom: {
+    label: "Custom (OpenAI Compatible)",
+    baseUrl: "",
+    models: ["custom-model"],
+    defaultModel: "gpt-3.5-turbo",
+    keyPlaceholder: "API Key custom",
+    keyPrefix: ""
+  }
+};
 
 // ---------------------------------------------------------------------------
 // PROMPT AGEN (siap disalin & di-paste saat onboarding Paperclip)
@@ -73,7 +143,7 @@ istilah teknis kelistrikan (voltase, ampere, SNI, dsb) akurat sebelum dipublikas
   }
 ];
 
-// Klaim berlebihan yang dilarang oleh QA (harus bisa dibuktikan / fakta teknis)
+// Klaim berlebihan yang dilarang oleh QA
 const CLAIM_BLACKLIST = [
   "tidak akan pernah rusak", "anti rusak", "pasti awet", "awet selamanya", "selamanya",
   "paling murah", "termurah", "terbaik", "nomor 1", "no 1", "dijamin", "100% aman", "anti gagal"
@@ -104,6 +174,309 @@ ${c.misi}
 
 Budget: ${c.budget} (token/biaya bulanan maksimum per agent)
 Heartbeat: Setiap hari jam ${c.jam} WIB — cek antrian produk baru yang perlu konten`;
+}
+
+// ---------------------------------------------------------------------------
+// AI API SETTINGS — Multi Provider
+// ---------------------------------------------------------------------------
+const LS_KEY = "paperclip_ai_config_v2";
+
+function getDefaultAIConfig() {
+  return {
+    enabled: false,
+    provider: "openai",
+    apiKey: "",
+    baseUrl: "",
+    model: "gpt-4o-mini",
+    temperature: 0.7,
+    proxyMode: "auto", // auto, direct, proxy
+    perAgent: {
+      seo: { enabled: false, provider: "", model: "" },
+      sosmed: { enabled: false, provider: "", model: "" },
+      video: { enabled: false, provider: "", model: "" },
+      qa: { enabled: false, provider: "", model: "" }
+    }
+  };
+}
+
+function loadAIConfig() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return getDefaultAIConfig();
+    const parsed = JSON.parse(raw);
+    return { ...getDefaultAIConfig(), ...parsed, perAgent: { ...getDefaultAIConfig().perAgent, ...(parsed.perAgent||{}) } };
+  } catch {
+    return getDefaultAIConfig();
+  }
+}
+
+function saveAIConfig(cfg) {
+  localStorage.setItem(LS_KEY, JSON.stringify(cfg));
+  updateAIStatusUI();
+}
+
+function getAIConfig() {
+  // read from UI if present, else from LS
+  const cfg = loadAIConfig();
+  const enableEl = $("aiEnable");
+  if (enableEl) {
+    cfg.enabled = enableEl.checked;
+    cfg.provider = $("aiProvider")?.value || cfg.provider;
+    cfg.model = $("aiModel")?.value || cfg.model;
+    cfg.apiKey = $("aiApiKey")?.value || cfg.apiKey;
+    cfg.baseUrl = $("aiBaseUrl")?.value || cfg.baseUrl;
+    cfg.temperature = parseFloat($("aiTemp")?.value || cfg.temperature);
+    cfg.proxyMode = $("aiProxyMode")?.value || cfg.proxyMode;
+    // per agent
+    AGENTS.forEach(a => {
+      const en = document.getElementById(`ai_${a.id}_enabled`);
+      const prov = document.getElementById(`ai_${a.id}_provider`);
+      const mod = document.getElementById(`ai_${a.id}_model`);
+      if (en) cfg.perAgent[a.id] = {
+        enabled: en.checked,
+        provider: prov?.value || "",
+        model: mod?.value || ""
+      };
+    });
+  }
+  return cfg;
+}
+
+function getEffectiveAIConfigForAgent(agentId) {
+  const global = getAIConfig();
+  if (!global.enabled) return { enabled: false };
+  const per = global.perAgent?.[agentId];
+  if (per && per.enabled) {
+    return {
+      enabled: true,
+      provider: per.provider || global.provider,
+      model: per.model || global.model,
+      apiKey: global.apiKey,
+      baseUrl: global.baseUrl,
+      temperature: global.temperature,
+      proxyMode: global.proxyMode
+    };
+  }
+  return { enabled: true, ...global };
+}
+
+function updateModelList() {
+  const provider = $("aiProvider")?.value || "openai";
+  const def = AI_PROVIDERS[provider];
+  const list = $("modelList");
+  const modelInput = $("aiModel");
+  const hint = $("modelHint");
+  const baseInput = $("aiBaseUrl");
+  const keyInput = $("aiApiKey");
+  if (!def) return;
+  if (list) {
+    list.innerHTML = def.models.map(m => `<option value="${m}">`).join("");
+  }
+  if (modelInput && !modelInput.value) {
+    modelInput.value = def.defaultModel;
+  }
+  if (hint) {
+    hint.textContent = `Rekomendasi: ${def.models.slice(0,3).join(", ")} — default: ${def.defaultModel}`;
+  }
+  if (baseInput) {
+    baseInput.placeholder = def.baseUrl || "https://api.example.com/v1 — kosongkan untuk default";
+    if (!baseInput.value) baseInput.value = "";
+  }
+  if (keyInput) {
+    keyInput.placeholder = def.keyPlaceholder;
+  }
+}
+
+function renderPerAgentSettings() {
+  const container = $("perAgentSettings");
+  if (!container) return;
+  const cfg = loadAIConfig();
+  container.innerHTML = AGENTS.map(a => {
+    const per = cfg.perAgent?.[a.id] || {};
+    return `<div class="per-agent-card">
+      <h4>${a.icon} ${a.role}</h4>
+      <label class="check"><input type="checkbox" id="ai_${a.id}_enabled" ${per.enabled ? "checked" : ""}/> Override khusus ${a.id}</label>
+      <label>Provider
+        <select id="ai_${a.id}_provider">
+          <option value="">— pakai global —</option>
+          ${Object.entries(AI_PROVIDERS).map(([k,v])=>`<option value="${k}" ${per.provider===k?"selected":""}>${v.label}</option>`).join("")}
+        </select>
+      </label>
+      <label>Model
+        <input id="ai_${a.id}_model" type="text" value="${esc(per.model||"")}" placeholder="kosong = pakai global" />
+      </label>
+    </div>`;
+  }).join("");
+}
+
+function updateAIStatusUI() {
+  const cfg = loadAIConfig();
+  const statusEl = $("aiStatus");
+  const panel = $("aiConfigPanel");
+  if (!statusEl) return;
+  if (!cfg.enabled) {
+    statusEl.textContent = "Mode Template (offline)";
+    statusEl.className = "ai-status";
+    if (panel) panel.classList.add("disabled");
+  } else {
+    const hasKey = !!cfg.apiKey;
+    statusEl.textContent = hasKey ? `AI Aktif: ${AI_PROVIDERS[cfg.provider]?.label || cfg.provider} / ${cfg.model}` : `AI Aktif (butuh API Key) — ${cfg.provider}`;
+    statusEl.className = hasKey ? "ai-status active" : "ai-status error";
+    if (panel) panel.classList.remove("disabled");
+  }
+  // update temp label
+  const tv = $("aiTempVal");
+  if (tv && $("aiTemp")) tv.textContent = $("aiTemp").value;
+}
+
+function initAISettings() {
+  const cfg = loadAIConfig();
+  if ($("aiEnable")) $("aiEnable").checked = cfg.enabled;
+  if ($("aiProvider")) $("aiProvider").value = cfg.provider;
+  if ($("aiModel")) $("aiModel").value = cfg.model;
+  if ($("aiApiKey")) $("aiApiKey").value = cfg.apiKey;
+  if ($("aiBaseUrl")) $("aiBaseUrl").value = cfg.baseUrl;
+  if ($("aiTemp")) $("aiTemp").value = cfg.temperature;
+  if ($("aiProxyMode")) $("aiProxyMode").value = cfg.proxyMode || "auto";
+  updateModelList();
+  renderPerAgentSettings();
+  updateAIStatusUI();
+
+  // events
+  $("aiProvider")?.addEventListener("change", () => {
+    updateModelList();
+    const def = AI_PROVIDERS[$("aiProvider").value];
+    if (def) $("aiModel").value = def.defaultModel;
+  });
+  $("aiEnable")?.addEventListener("change", () => {
+    saveAIConfig(getAIConfig());
+  });
+  $("aiTemp")?.addEventListener("input", () => {
+    $("aiTempVal").textContent = $("aiTemp").value;
+  });
+  $("aiSave")?.addEventListener("click", () => {
+    saveAIConfig(getAIConfig());
+    $("aiTestResult").textContent = "✅ Setting disimpan di localStorage";
+    setTimeout(()=>$("aiTestResult").textContent="", 3000);
+  });
+  $("aiClear")?.addEventListener("click", () => {
+    if (!confirm("Hapus API Key dari localStorage?")) return;
+    const c = getAIConfig();
+    c.apiKey = "";
+    $("aiApiKey").value = "";
+    saveAIConfig(c);
+    $("aiTestResult").textContent = "🗑️ API Key dihapus";
+  });
+  $("toggleApiKey")?.addEventListener("click", () => {
+    const inp = $("aiApiKey");
+    inp.type = inp.type === "password" ? "text" : "password";
+  });
+  $("aiTest")?.addEventListener("click", async () => {
+    const cfg = getAIConfig();
+    saveAIConfig(cfg);
+    $("aiTestResult").textContent = "⏳ Testing...";
+    try {
+      const res = await callAI({
+        provider: cfg.provider,
+        model: cfg.model,
+        apiKey: cfg.apiKey,
+        baseUrl: cfg.baseUrl,
+        temperature: cfg.temperature,
+        proxyMode: cfg.proxyMode,
+        system: "Kamu adalah tester koneksi.",
+        prompt: "Balas dengan 'OK koneksi berhasil' dalam bahasa Indonesia."
+      });
+      $("aiTestResult").textContent = `✅ Berhasil: ${res.content.slice(0,80)}... (model: ${res.model})`;
+    } catch (e) {
+      $("aiTestResult").textContent = `❌ Gagal: ${e.message}`;
+    }
+  });
+  // per agent change listeners (delegated)
+  document.addEventListener("change", (e)=>{
+    if (e.target.id && e.target.id.startsWith("ai_")) {
+      // auto save per agent
+      saveAIConfig(getAIConfig());
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// AI CALLER — Proxy & Direct
+// ---------------------------------------------------------------------------
+async function callAI({ provider, model, apiKey, baseUrl, system, prompt, messages, temperature = 0.7, proxyMode = "auto", max_tokens = 2000 }) {
+  const def = AI_PROVIDERS[provider] || AI_PROVIDERS.custom;
+  const effectiveBase = baseUrl || def.baseUrl;
+
+  // Decide proxy vs direct
+  const isVercel = window.location.hostname.includes("vercel.app") || window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+  const useProxy = proxyMode === "proxy" || (proxyMode === "auto" && (isVercel || !apiKey)); // auto uses proxy on Vercel or if no key (env)
+
+  if (useProxy) {
+    // Use /api/ai proxy (Vercel serverless)
+    const resp = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, model, apiKey, baseUrl: effectiveBase, system, prompt, messages, temperature, max_tokens })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || `Proxy error ${resp.status}`);
+    return data;
+  } else {
+    // Direct call to provider
+    if (!apiKey) throw new Error(`API Key untuk ${provider} kosong. Isi di setting atau gunakan mode Proxy dengan env di Vercel.`);
+    
+    if (["openai","groq","openrouter","deepseek","mistral","custom"].includes(provider)) {
+      const url = `${effectiveBase.replace(/\/$/,"")}/chat/completions`;
+      const payload = {
+        model: model || def.defaultModel,
+        messages: messages || [...(system ? [{role:"system", content: system}] : []), {role:"user", content: prompt}],
+        temperature,
+        max_tokens
+      };
+      const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
+      if (provider === "openrouter") {
+        headers["HTTP-Referer"] = window.location.origin;
+        headers["X-Title"] = "Paperclip AI";
+      }
+      const r = await fetch(url, { method:"POST", headers, body: JSON.stringify(payload) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || JSON.stringify(data.error) || `Error ${r.status}`);
+      return { content: data.choices[0].message.content, model: data.model, raw: data };
+    }
+
+    if (provider === "anthropic") {
+      const url = `${effectiveBase}/v1/messages`;
+      const sys = system || messages?.find(m=>m.role==="system")?.content || "";
+      const userMsgs = (messages || [{role:"user", content: prompt}]).filter(m=>m.role!=="system").map(m=>({role: m.role==="assistant"?"assistant":"user", content: m.content || m}));
+      const payload = { model: model||def.defaultModel, max_tokens, temperature, system: sys||undefined, messages: userMsgs };
+      const r = await fetch(url, {
+        method:"POST",
+        headers: { "Content-Type":"application/json", "x-api-key": apiKey, "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || `Anthropic error ${r.status}`);
+      return { content: data.content.map(c=>c.text).join("\n"), model: data.model, raw: data };
+    }
+
+    if (provider === "gemini") {
+      const modelName = model || def.defaultModel;
+      const url = `${effectiveBase}/models/${modelName}:generateContent?key=${apiKey}`;
+      const sys = system || "";
+      const contents = (messages || [{role:"user", content: prompt}]).filter(m=>m.role!=="system").map(m=>({role: m.role==="assistant"?"model":"user", parts:[{text:m.content||m}]}));
+      const payload = {
+        system_instruction: sys ? {parts:[{text:sys}]} : undefined,
+        contents,
+        generationConfig: { temperature, maxOutputTokens: max_tokens }
+      };
+      const r = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error?.message || `Gemini error ${r.status}`);
+      return { content: data.candidates?.[0]?.content?.parts?.map(p=>p.text).join("\n") || "", model: modelName, raw: data };
+    }
+
+    throw new Error(`Provider ${provider} tidak didukung untuk direct mode`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -164,7 +537,7 @@ function collect() {
 }
 
 // ---------------------------------------------------------------------------
-// AGENT #1 — MARKETPLACE SEO WRITER
+// TEMPLATE LOGIC (fallback) — MARKETPLACE SEO WRITER
 // ---------------------------------------------------------------------------
 function buildKeywords(d) {
   const tags = [];
@@ -183,18 +556,16 @@ function buildKeywords(d) {
     if (f.includes("panas")) push("tahan panas");
     if (f.includes("hemat")) push("hemat listrik");
   }
-  // padding agar minimal 5 keyword (aturan SEO Writer)
   ["alat listrik", "elektrikal", "listrik rumah", "instalasi listrik"]
     .forEach(k => { if (tags.length < 5) push(k); });
   return tags.slice(0, 8);
 }
 
 function buildSeoTitle(d) {
-  // Format: [Merek/Jenis] + [Fungsi] + [Ukuran/Spesifikasi] + [Kata kunci populer]
   const head = `${d.nama} ${d.spek}`.toLowerCase();
   const kwTail = buildKeywords(d)
-    .filter(k => k.toLowerCase() !== d.merek.toLowerCase()          // merek sudah disebut terpisah
-      && !head.includes(k.toLowerCase())                             // jangan ulangi kata di nama/spek
+    .filter(k => k.toLowerCase() !== d.merek.toLowerCase()
+      && !head.includes(k.toLowerCase())
       && !["kabel listrik", "alat listrik"].includes(k))
     .slice(0, 4)
     .map(k => k.replace(/\b\w/g, c => c.toUpperCase()))
@@ -235,25 +606,18 @@ function buildLongDesc(d, c) {
   return [p1, p2, p3].join("\n\n");
 }
 
-// ---------------------------------------------------------------------------
-// AGENT #2 — SOCIAL MEDIA COPYWRITER
-// ---------------------------------------------------------------------------
 function buildHashtags(d, c) {
   const tags = [];
   const push = (t) => { if (t && !tags.includes(t)) tags.push(t); };
-  // niche
   push("#alatlistrik");
   push("#" + slug(d.kategori + (d.kategori === "Kabel" ? "listrik" : "")) || null);
   push("#tokolistrik");
-  // broad — mengikuti sales channels yang dicentang di onboarding
   if (c.channels.includes("Shopee")) push("#shopeeindonesia");
   if (c.channels.includes("Tokopedia")) push("#tokopedia");
   if (c.channels.includes("TikTok Shop")) push("#tiktokshop");
   if (c.channels.includes("Instagram")) push("#instagramindonesia");
   push("#rumahtangga"); push("#hematlistrik"); push("#elektrikal");
-  // lokal
   if (d.kota) push("#" + slug("toko listrik " + d.kota));
-  // padding agar minimal 8 hashtag (aturan Copywriter: 8–12)
   ["#instalasilistrik", "#tokobangunan", "#rumahminimalis", "#belanjaonline"]
     .forEach(k => { if (tags.length < 8) push(k); });
   return tags.slice(0, 12);
@@ -301,9 +665,6 @@ Balas "MAU" atau klik link di atas ya Kak, kami bantu sampai tuntas 🙏`;
   return { informatif, soft, hard, wa, tags };
 }
 
-// ---------------------------------------------------------------------------
-// AGENT #3 — VIDEO SCRIPT & STORYBOARD WRITER
-// ---------------------------------------------------------------------------
 function buildStoryboard(d, c) {
   const total = d.durasi || 25;
   const namaFull = `${d.merek ? d.merek + " " : ""}${d.nama}`;
@@ -311,7 +672,6 @@ function buildStoryboard(d, c) {
   const sniLine = d.sni ? " Udah SNI, jadi aman." : " Kualitasnya teruji, jadi tenang.";
   const harga = d.harga ? `Mulai ${rupiah(d.harga)} aja!` : "Cek harganya di keranjang kuning!";
 
-  // proporsi adegan mengikuti template 25 detik dari blueprint, diskalakan ke durasi target
   const weights = [3, 4, 5, 6, 4, 3];
   const scale = total / weights.reduce((a, b) => a + b, 0);
   let t = 0;
@@ -338,9 +698,6 @@ function buildStoryboard(d, c) {
   return { total, rows, caption, musik, catatan };
 }
 
-// ---------------------------------------------------------------------------
-// AGENT #4 — QA & BRAND VOICE REVIEWER
-// ---------------------------------------------------------------------------
 function runQA(d, out) {
   const checks = [];
   const add = (ok, label, detail) => checks.push({ ok, label, detail });
@@ -357,7 +714,6 @@ function runQA(d, out) {
   const wc = countWords(out.seo.desc);
   add(wc >= 150 && wc <= 300, "Deskripsi panjang 150–300 kata", `${wc} kata`);
 
-  // klaim berlebihan — pindai semua output + input keunggulan dari user
   const allText = [
     out.seo.title, out.seo.desc, ...out.seo.bullets,
     out.sosmed.informatif, out.sosmed.soft, out.sosmed.hard, out.sosmed.wa,
@@ -367,18 +723,15 @@ function runQA(d, out) {
   const found = CLAIM_BLACKLIST.filter(p => allText.includes(p));
   add(found.length === 0, "Bebas klaim berlebihan / tidak bisa dibuktikan", found.length ? `Ditemukan: ${found.join(", ")}` : "Tidak ada klaim berlebihan ✓");
 
-  // klaim SNI hanya boleh jika produk memang bersertifikat
   const sniMentioned = allText.includes("sni");
   add(d.sni || !sniMentioned, "Klaim SNI sesuai sertifikat produk", d.sni ? (sniMentioned ? "Sertifikat dicentang & SNI dicantumkan ✓" : "Sertifikat dicentang (SNI opsional dicantumkan)") : (sniMentioned ? "⚠ SNI dicantumkan tapi sertifikat tidak dicentang!" : "Tidak ada klaim SNI palsu ✓"));
 
-  // istilah teknis: tegangan/ampere dari input harus tercantum di listing
   const listingText = (out.seo.title + " " + out.seo.desc + " " + out.seo.bullets.join(" ")).toLowerCase();
   const specIssues = [];
   if (d.tegangan && !listingText.includes(d.tegangan)) specIssues.push(`tegangan ${d.tegangan}V tidak tercantum`);
   if (d.arus && !listingText.includes(d.arus)) specIssues.push(`arus ${d.arus}A tidak tercantum`);
   add(specIssues.length === 0, "Istilah teknis (voltase/ampere) akurat & tercantum", specIssues.length ? specIssues.join("; ") : "Semua parameter teknis dari input tercantum ✓");
 
-  // hashtag per caption 8–12 & wajib ada CTA
   const capList = [["Informatif", out.sosmed.informatif], ["Soft-selling", out.sosmed.soft], ["Hard-selling", out.sosmed.hard]];
   const tagIssues = capList
     .map(([t, txt]) => `${t}: ${countHashtags(txt)} hashtag`)
@@ -395,7 +748,140 @@ function runQA(d, out) {
 }
 
 // ---------------------------------------------------------------------------
-// PIPELINE (Content Director → 4 agen → render)
+// AI GENERATION WRAPPERS (LLM)
+// ---------------------------------------------------------------------------
+function buildProductContext(d, c) {
+  return `PRODUK:
+- Nama: ${d.nama}
+- Merek: ${d.merek}
+- Kategori: ${d.kategori}
+- Spek: ${d.spek}
+- Tegangan: ${d.tegangan} volt
+- Arus: ${d.arus} ampere
+- Fitur: ${d.fitur.join("; ")}
+- Harga: ${d.harga ? rupiah(d.harga) : "-"}
+- Paket: ${d.paket}
+- Garansi: ${d.garansi}
+- SNI: ${d.sni ? "Ya" : "Tidak"}
+- Kota: ${d.kota}
+- Target: ${d.target}
+- Durasi Video: ${d.durasi} detik
+
+TOKO:
+- Nama: ${c.toko}
+- Channel: ${c.channels.join(", ")}
+- Misi: ${c.misi}`;
+}
+
+async function aiGenerateSEO(d, c) {
+  const cfg = getEffectiveAIConfigForAgent("seo");
+  if (!cfg.enabled) return null;
+  const context = buildProductContext(d, c);
+  const system = `${AGENTS.find(a=>a.id==="seo").prompt}\n\nAturan QA: Judul ≤100 karakter, 5-8 keyword, 5-7 bullet, deskripsi 150-300 kata (3 paragraf). Jangan pakai klaim berlebihan: ${CLAIM_BLACKLIST.join(", ")}. Klaim SNI hanya jika SNI=Ya. Wajib cantumkan tegangan & arus jika ada di input.`;
+  const prompt = `${context}\n\nTUGAS: Buat listing marketplace untuk produk di atas. Output HARUS dalam format JSON valid dengan struktur:
+{
+  "title": "judul ≤100 karakter",
+  "keywords": ["kw1","kw2",... 5-8],
+  "bullets": ["bullet1", ... 5-7],
+  "desc": "deskripsi 3 paragraf, 150-300 kata, pisahkan paragraf dengan \\n\\n"
+}
+JANGAN tambahkan penjelasan lain, hanya JSON.`;
+
+  try {
+    const res = await callAI({ ...cfg, system, prompt, temperature: cfg.temperature });
+    // try parse JSON from response
+    const jsonMatch = res.content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("AI tidak mengembalikan JSON");
+    const parsed = JSON.parse(jsonMatch[0]);
+    // validate & fallback
+    return {
+      title: (parsed.title || buildSeoTitle(d)).slice(0,100),
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords.slice(0,8) : buildKeywords(d),
+      bullets: Array.isArray(parsed.bullets) ? parsed.bullets.slice(0,7) : buildBullets(d),
+      desc: parsed.desc || buildLongDesc(d,c),
+      _ai: true,
+      _model: res.model
+    };
+  } catch (e) {
+    console.warn("AI SEO failed, fallback template:", e);
+    throw e;
+  }
+}
+
+async function aiGenerateSosmed(d, c) {
+  const cfg = getEffectiveAIConfigForAgent("sosmed");
+  if (!cfg.enabled) return null;
+  const context = buildProductContext(d, c);
+  const system = `${AGENTS.find(a=>a.id==="sosmed").prompt}\n\nAturan: 8-12 hashtag per caption, semua caption wajib CTA (cek link / klik keranjang kuning), jangan klaim berlebihan.`;
+  const prompt = `${context}\n\nTUGAS: Buat 3 varian caption sosmed + 1 broadcast WA. Output JSON:
+{
+  "informatif": "caption varian informatif + hashtag 8-12",
+  "soft": "caption soft-selling + hashtag",
+  "hard": "caption hard-selling + hashtag",
+  "wa": "broadcast WA singkat ≤400 karakter + 1 link + CTA",
+  "tags": "#hashtag1 #hashtag2 ..."
+}
+Hanya JSON.`;
+
+  try {
+    const res = await callAI({ ...cfg, system, prompt, temperature: cfg.temperature });
+    const jsonMatch = res.content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("AI sosmed tidak JSON");
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      informatif: parsed.informatif || "",
+      soft: parsed.soft || "",
+      hard: parsed.hard || "",
+      wa: parsed.wa || "",
+      tags: parsed.tags || "",
+      _ai: true,
+      _model: res.model
+    };
+  } catch (e) {
+    console.warn("AI Sosmed failed:", e);
+    throw e;
+  }
+}
+
+async function aiGenerateVideo(d, c) {
+  const cfg = getEffectiveAIConfigForAgent("video");
+  if (!cfg.enabled) return null;
+  const context = buildProductContext(d, c);
+  const system = `${AGENTS.find(a=>a.id==="video").prompt}\n\nBuat storyboard 6 adegan sesuai durasi ${d.durasi} detik, format vertikal 9:16.`;
+  const prompt = `${context}\n\nTUGAS: Buat storyboard video ${d.durasi} detik. Output JSON:
+{
+  "rows": [
+    {"waktu": "0-3 dtk", "visual": "deskripsi visual", "vo": "voice over / teks"},
+    ... 6 adegan
+  ],
+  "caption": "caption pendamping video + hashtag",
+  "musik": "rekomendasi musik TikTok trending",
+  "catatan": "catatan produksi"
+}
+Hanya JSON.`;
+
+  try {
+    const res = await callAI({ ...cfg, system, prompt, temperature: cfg.temperature });
+    const jsonMatch = res.content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("AI video tidak JSON");
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      total: d.durasi,
+      rows: parsed.rows || [],
+      caption: parsed.caption || "",
+      musik: parsed.musik || "",
+      catatan: parsed.catatan || "",
+      _ai: true,
+      _model: res.model
+    };
+  } catch (e) {
+    console.warn("AI Video failed:", e);
+    throw e;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PIPELINE (Content Director → 4 agen → render) — Now AI-aware
 // ---------------------------------------------------------------------------
 let lastResult = null;
 
@@ -415,7 +901,7 @@ function setSteps(state) {
   });
 }
 
-function generate() {
+async function generate() {
   const d = collect();
   const c = getCompany();
   if (!d.nama) { alert("Isi dulu Nama Produk ya kak 📎 (atau klik ⚡ Isi Contoh)"); return; }
@@ -426,44 +912,94 @@ function generate() {
   setSteps([]);
 
   $("misiBanner").classList.remove("hidden");
-  $("misiBanner").innerHTML = `🎯 <b>Traceability misi:</b> semua task di bawah mendukung misi company — <i>“${esc(c.misi)}”</i>`;
+  const aiCfg = getAIConfig();
+  const aiInfo = aiCfg.enabled ? ` <span class="ai-badge ai">🤖 AI: ${AI_PROVIDERS[aiCfg.provider]?.label || aiCfg.provider} ${aiCfg.model}</span>` : ` <span class="ai-badge template">📄 Template Lokal</span>`;
+  $("misiBanner").innerHTML = `🎯 <b>Traceability misi:</b> semua task di bawah mendukung misi company — <i>“${esc(c.misi)}”</i>${aiInfo}`;
 
   const t = (ms, fn) => new Promise(res => setTimeout(() => { fn(); res(); }, ms));
-  (async () => {
-    await t(350, () => setSteps(["director"]));
-    await t(500, () => setSteps(["director", "seo"]));
-    await t(500, () => setSteps(["director", "seo", "sosmed"]));
-    await t(500, () => setSteps(["director", "seo", "sosmed", "video"]));
+  
+  try {
+    await t(200, () => setSteps(["director"]));
+    
+    // SEO
+    await t(300, () => setSteps(["director", "seo"]));
+    let seo;
+    try {
+      if (aiCfg.enabled) {
+        btn.textContent = "🤖 AI: Menulis SEO...";
+        seo = await aiGenerateSEO(d, c);
+      }
+    } catch (e) {
+      console.error(e);
+      // fallback
+      seo = null;
+    }
+    if (!seo) {
+      seo = {
+        title: buildSeoTitle(d),
+        keywords: buildKeywords(d),
+        bullets: buildBullets(d),
+        desc: buildLongDesc(d, c),
+        _ai: false
+      };
+    }
 
-    const seo = {
-      title: buildSeoTitle(d),
-      keywords: buildKeywords(d),
-      bullets: buildBullets(d),
-      desc: buildLongDesc(d, c)
-    };
-    const sosmed = buildCaptions(d, c);
-    const video = buildStoryboard(d, c);
+    // Sosmed
+    await t(200, () => setSteps(["director", "seo", "sosmed"]));
+    let sosmed;
+    try {
+      if (aiCfg.enabled) {
+        btn.textContent = "🤖 AI: Menulis Caption Sosmed...";
+        sosmed = await aiGenerateSosmed(d, c);
+      }
+    } catch (e) {
+      sosmed = null;
+    }
+    if (!sosmed) {
+      sosmed = { ...buildCaptions(d, c), _ai: false };
+    }
+
+    // Video
+    await t(200, () => setSteps(["director", "seo", "sosmed", "video"]));
+    let video;
+    try {
+      if (aiCfg.enabled) {
+        btn.textContent = "🤖 AI: Menulis Video Script...";
+        video = await aiGenerateVideo(d, c);
+      }
+    } catch (e) {
+      video = null;
+    }
+    if (!video) {
+      video = { ...buildStoryboard(d, c), _ai: false };
+    }
+
     const out = { seo, sosmed, video, company: c, product: d };
     out.qa = runQA(d, out);
     lastResult = out;
 
-    await t(400, () => setSteps(["director", "seo", "sosmed", "video", "qa"]));
+    await t(200, () => setSteps(["director", "seo", "sosmed", "video", "qa"]));
     render(document.querySelector(".tab.active").dataset.tab);
+  } catch (e) {
+    alert("Error pipeline: " + e.message);
+    console.error(e);
+  } finally {
     btn.disabled = false;
     btn.textContent = "🎬 Jalankan Pipeline Content Director";
-  })();
+  }
 }
 
 // ---------------------------------------------------------------------------
 // RENDER OUTPUT
 // ---------------------------------------------------------------------------
-function agentTag(agentId) {
+function agentTag(agentId, isAI = false, model = "") {
   const a = AGENTS.find(x => x.id === agentId);
-  return `<span class="trace">👤 ${a.role} → 🎯 misi penjualan marketplace</span>`;
+  const badge = isAI ? `<span class="ai-badge ai">🤖 AI ${model ? "("+esc(model)+")" : ""}</span>` : `<span class="ai-badge template">📄 Template</span>`;
+  return `<span class="trace">👤 ${a.role} → 🎯 misi penjualan marketplace ${badge}</span>`;
 }
 
 function block(agentId, title, text, opts = {}) {
-  const { limit, wordRange } = opts;
+  const { limit, wordRange, isAI, model } = opts;
   let meta = "";
   if (limit) {
     const over = text.length > limit;
@@ -478,31 +1014,37 @@ function block(agentId, title, text, opts = {}) {
       <h3>${title} ${meta}</h3>
       <button class="copy-btn" data-copy="${encodeURIComponent(text)}">Salin</button>
     </div>
-    ${agentTag(agentId)}
+    ${agentTag(agentId, isAI, model)}
     <div class="block-body">${esc(text)}</div>
   </div>`;
 }
 
 function renderSeo(out) {
   const kw = `<div class="chips">${out.seo.keywords.map(k => `<span class="chip">#${esc(k)}</span>`).join("")}</div>`;
-  return block("seo", "Judul Produk (siap tempel)", out.seo.title, { limit: 100 })
+  const isAI = out.seo._ai;
+  const model = out.seo._model || "";
+  return block("seo", "Judul Produk (siap tempel)", out.seo.title, { limit: 100, isAI, model })
     + `<div class="block">
          <div class="block-head"><h3>Keyword Pencarian Populer (${out.seo.keywords.length})</h3></div>
-         ${agentTag("seo")}${kw}
+         ${agentTag("seo", isAI, model)}${kw}
        </div>`
-    + block("seo", "Bullet Point (fitur & keunggulan)", out.seo.bullets.join("\n"))
-    + block("seo", "Deskripsi Panjang (3 paragraf)", out.seo.desc, { wordRange: [150, 300] });
+    + block("seo", "Bullet Point (fitur & keunggulan)", out.seo.bullets.join("\n"), { isAI, model })
+    + block("seo", "Deskripsi Panjang (3 paragraf)", out.seo.desc, { wordRange: [150, 300], isAI, model });
 }
 
 function renderSosmed(out) {
-  return block("sosmed", "Caption — Varian 1: Informatif (edukasi)", out.sosmed.informatif)
-    + block("sosmed", "Caption — Varian 2: Soft-Selling (masalah → solusi)", out.sosmed.soft)
-    + block("sosmed", "Caption — Varian 3: Hard-Selling (promo/diskon)", out.sosmed.hard)
-    + block("sosmed", "Broadcast WhatsApp", out.sosmed.wa);
+  const isAI = out.sosmed._ai;
+  const model = out.sosmed._model || "";
+  return block("sosmed", "Caption — Varian 1: Informatif (edukasi)", out.sosmed.informatif, { isAI, model })
+    + block("sosmed", "Caption — Varian 2: Soft-Selling (masalah → solusi)", out.sosmed.soft, { isAI, model })
+    + block("sosmed", "Caption — Varian 3: Hard-Selling (promo/diskon)", out.sosmed.hard, { isAI, model })
+    + block("sosmed", "Broadcast WhatsApp", out.sosmed.wa, { isAI, model });
 }
 
 function renderVideo(out) {
   const v = out.video;
+  const isAI = v._ai;
+  const model = v._model || "";
   const table = `<table class="storyboard">
     <thead><tr><th>#</th><th>Waktu</th><th>Visual</th><th>Voice Over / Teks di Layar</th></tr></thead>
     <tbody>${v.rows.map((r, i) => `<tr>
@@ -513,10 +1055,10 @@ function renderVideo(out) {
       <div class="block-head"><h3>Storyboard — ${v.total} detik · Format 9:16 vertikal</h3>
         <button class="copy-btn" data-copy="${encodeURIComponent(v.rows.map((r, i) => `${i + 1}. [${r.waktu}] ${r.visual} — ${r.vo}`).join("\n"))}">Salin</button>
       </div>
-      ${agentTag("video")}${table}
+      ${agentTag("video", isAI, model)}${table}
     </div>`
-    + block("video", "Caption Pendamping Video", v.caption)
-    + block("video", "Musik & Catatan Produksi", v.musik + "\n\n" + v.catatan);
+    + block("video", "Caption Pendamping Video", v.caption, { isAI, model })
+    + block("video", "Musik & Catatan Produksi", v.musik + "\n\n" + v.catatan, { isAI, model });
 }
 
 function renderQA(out) {
@@ -548,7 +1090,7 @@ function render(tab) {
 }
 
 // ---------------------------------------------------------------------------
-// COPY HANDLERS (delegasi global)
+// COPY HANDLERS
 // ---------------------------------------------------------------------------
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-copy], [data-copy-src]");
@@ -578,6 +1120,7 @@ document.addEventListener("click", async (e) => {
 // INIT
 // ---------------------------------------------------------------------------
 renderOrgChart();
+initAISettings();
 $("isiContoh").addEventListener("click", isiContoh);
 $("generate").addEventListener("click", generate);
 document.querySelectorAll(".tab").forEach(t => {

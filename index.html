@@ -56,6 +56,99 @@
     </div>
   </section>
 
+  <!-- 1.5 AI API SETTINGS -->
+  <section class="card" id="aiSettings">
+    <h2>🤖 Setting AI API — Multi Provider</h2>
+    <p class="hint">Pilih provider AI untuk menjalankan agen dengan LLM sungguhan. Jika dimatikan, pipeline pakai template lokal (tanpa API). API Key disimpan lokal di browser (localStorage) — tidak dikirim ke repo. Untuk deploy Vercel production, bisa juga pakai Environment Variables.</p>
+    
+    <div class="ai-toggle-row">
+      <label class="check big switch-label">
+        <input id="aiEnable" type="checkbox" />
+        <span class="switch"></span>
+        <span><b>Aktifkan AI API</b> <span class="muted">— jika mati, pakai template lokal (gratis, offline)</span></span>
+      </label>
+      <span id="aiStatus" class="ai-status">Mode Template</span>
+    </div>
+
+    <div id="aiConfigPanel" class="ai-panel disabled">
+      <div class="grid2">
+        <label>Provider AI
+          <select id="aiProvider">
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic Claude</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="groq">Groq (cepat & murah)</option>
+            <option value="openrouter">OpenRouter (multi-model)</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="mistral">Mistral AI</option>
+            <option value="custom">Custom (OpenAI Compatible)</option>
+          </select>
+        </label>
+        <label>Model
+          <input id="aiModel" list="modelList" type="text" placeholder="cth: gpt-4o-mini" />
+          <datalist id="modelList"></datalist>
+          <span class="muted small" id="modelHint">Pilih provider untuk lihat rekomendasi model</span>
+        </label>
+      </div>
+
+      <div class="grid2">
+        <label>API Key <span class="muted">(disimpan lokal)</span>
+          <div class="input-with-btn">
+            <input id="aiApiKey" type="password" placeholder="sk-... / gsk_... / AIza..." />
+            <button type="button" class="btn-eye" id="toggleApiKey">👁️</button>
+          </div>
+        </label>
+        <label>Base URL <span class="muted">(opsional, untuk Custom / Proxy)</span>
+          <input id="aiBaseUrl" type="text" placeholder="https://api.openai.com/v1 — kosongkan untuk default" />
+        </label>
+      </div>
+
+      <div class="grid2">
+        <label>Temperature (kreativitas)
+          <input id="aiTemp" type="range" min="0" max="1" step="0.1" value="0.7" />
+          <span class="muted small"><span id="aiTempVal">0.7</span> — 0 = presisi, 1 = kreatif</span>
+        </label>
+        <label>Mode Proxy
+          <select id="aiProxyMode">
+            <option value="auto">Auto (pakai /api/ai jika di Vercel)</option>
+            <option value="direct">Direct (langsung ke provider, bisa CORS)</option>
+            <option value="proxy">Force Proxy (/api/ai)</option>
+          </select>
+          <span class="muted small">Gunakan Proxy untuk hindari CORS & sembunyikan key di server</span>
+        </label>
+      </div>
+
+      <div class="ai-actions">
+        <button id="aiTest" class="btn-ghost" type="button">🧪 Test Koneksi</button>
+        <button id="aiSave" class="btn-ghost" type="button">💾 Simpan Setting</button>
+        <button id="aiClear" class="btn-ghost danger" type="button">🗑️ Hapus Key</button>
+        <span id="aiTestResult" class="muted"></span>
+      </div>
+
+      <details class="ai-advanced">
+        <summary>⚙️ Setting Per-Agent (Advanced)</summary>
+        <p class="hint">Override provider/model per agen. Kosongkan untuk pakai setting global.</p>
+        <div id="perAgentSettings" class="per-agent-grid"></div>
+      </details>
+
+      <details class="ai-advanced">
+        <summary>🔐 Vercel Environment Variables (Production)</summary>
+        <div class="env-help">
+          <p class="hint">Untuk production, set env di Vercel Dashboard → Settings → Environment Variables:</p>
+          <code class="code-block">OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=AIza...
+GROQ_API_KEY=gsk_...
+OPENROUTER_API_KEY=sk-or-...
+DEEPSEEK_API_KEY=sk-...
+MISTRAL_API_KEY=...
+AI_PROXY_ENABLED=true</code>
+          <p class="hint">Jika env ada, proxy <code>/api/ai</code> akan pakai key server — client tidak perlu input key.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
   <!-- 2. ORG CHART -->
   <section class="card" id="org">
     <h2>2️⃣ Struktur Tim — Org Chart</h2>

@@ -48,6 +48,60 @@ bukan sekadar posting acak.
 - Klaim **SNI** hanya boleh jika produk memang dicentang bersertifikat
 - Tegangan (volt) & arus (ampere) dari input harus tercantum di listing
 
+## 🤖 Setting AI API — Multi Provider (BARU)
+
+Sekarang support **8 provider AI** dengan UI setting lengkap + proxy Vercel anti-CORS!
+
+### Provider yang didukung:
+| Provider | Model Rekomendasi | Gratis? | Kecepatan |
+|---|---|---|---|
+| **OpenAI** | `gpt-4o-mini`, `gpt-4o` | ❌ | ⭐⭐⭐ |
+| **Anthropic Claude** | `claude-3-5-sonnet`, `claude-3-5-haiku` | ❌ | ⭐⭐⭐⭐ |
+| **Google Gemini** | `gemini-1.5-flash` (free tier) | ✅ | ⭐⭐⭐⭐ |
+| **Groq** | `llama-3.1-8b-instant` (super cepat) | ✅ | ⭐⭐⭐⭐⭐ |
+| **OpenRouter** | `openai/gpt-4o-mini`, `meta-llama/...:free` | ✅ | ⭐⭐⭐ |
+| **DeepSeek** | `deepseek-chat` (murah) | ✅ | ⭐⭐⭐ |
+| **Mistral** | `mistral-small-latest` | ✅ | ⭐⭐⭐ |
+| **Custom** | OpenAI Compatible apa pun | — | — |
+
+### Cara pakai:
+
+**1. Mode Template (default, offline, gratis):**
+- Tidak perlu API key
+- Pakai logic template lokal yang sudah SEO-optimized
+
+**2. Mode AI API (aktifkan di UI):**
+- Buka section **🤖 Setting AI API**
+- Toggle **Aktifkan AI API**
+- Pilih provider (misal Groq untuk gratis & cepat)
+- Masukkan API Key (disimpan di localStorage, tidak ke repo)
+- Pilih model
+- Klik **🧪 Test Koneksi** → **💾 Simpan**
+- Jalankan pipeline — semua agen akan pakai LLM!
+
+**3. Per-Agent Override (Advanced):**
+- Buka **⚙️ Setting Per-Agent**
+- Bisa set provider/model beda per agen
+- Contoh: SEO pakai `gpt-4o`, Sosmed pakai `claude-3-5-sonnet`, Video pakai `gemini-1.5-flash`
+
+**4. Proxy Vercel (Production, anti-CORS):**
+- File `api/ai.js` otomatis jadi serverless function di Vercel
+- Mode Proxy `Auto` akan pakai `/api/ai` saat di Vercel
+- Set API Key di Vercel Dashboard → Settings → Environment Variables:
+```
+OPENAI_API_KEY=sk-...
+GROQ_API_KEY=gsk_...
+GEMINI_API_KEY=AIza...
+ANTHROPIC_API_KEY=sk-ant-...
+OPENROUTER_API_KEY=sk-or-...
+```
+- Jika env ada, client tidak perlu input key lagi (lebih aman)
+
+**Flow:**
+```
+User Input → Content Director → [SEO Writer (AI/Template)] → [Sosmed (AI/Template)] → [Video (AI/Template)] → QA → Output
+```
+
 ## 🚀 Deploy ke Vercel (Otomatis)
 
 Proyek ini sudah dikonfigurasi **zero-config** untuk Vercel:
@@ -94,9 +148,12 @@ python3 -m http.server 8000
 ```
 
 ## Struktur
-- `index.html` — onboarding company, org chart, form bahan, hasil 4 agen
-- `styles.css` — tampilan
-- `app.js` — mesin pipeline konten (100% client-side, tanpa backend)
-- `vercel.json` — konfigurasi deploy Vercel (static, cleanUrls, headers, rewrites)
+- `index.html` — onboarding company, org chart, **setting AI multi-provider**, form bahan, hasil 4 agen
+- `styles.css` — tampilan + style untuk AI settings
+- `app.js` — mesin pipeline konten (template + AI API multi-provider)
+- `api/ai.js` — Vercel serverless proxy untuk 8 provider AI (anti-CORS, pakai env)
+- `api/health.js` — cek status env API keys
+- `vercel.json` — konfigurasi deploy Vercel (static + serverless, cleanUrls, headers)
 - `package.json` — metadata + script dev/start untuk Vercel
 - `.vercelignore` — file yang diabaikan saat deploy
+- `.env.example` — contoh env vars untuk Vercel
